@@ -1430,10 +1430,10 @@
   function rgbn(n) {
     return new Rgb(n >> 16 & 255, n >> 8 & 255, n & 255, 1);
   }
-  function rgba(r, g2, b, a) {
+  function rgba(r, g, b, a) {
     if (a <= 0)
-      r = g2 = b = NaN;
-    return new Rgb(r, g2, b, a);
+      r = g = b = NaN;
+    return new Rgb(r, g, b, a);
   }
   function rgbConvert(o) {
     if (!(o instanceof Color))
@@ -1443,12 +1443,12 @@
     o = o.rgb();
     return new Rgb(o.r, o.g, o.b, o.opacity);
   }
-  function rgb(r, g2, b, opacity) {
-    return arguments.length === 1 ? rgbConvert(r) : new Rgb(r, g2, b, opacity == null ? 1 : opacity);
+  function rgb(r, g, b, opacity) {
+    return arguments.length === 1 ? rgbConvert(r) : new Rgb(r, g, b, opacity == null ? 1 : opacity);
   }
-  function Rgb(r, g2, b, opacity) {
+  function Rgb(r, g, b, opacity) {
     this.r = +r;
-    this.g = +g2;
+    this.g = +g;
     this.b = +b;
     this.opacity = +opacity;
   }
@@ -1516,14 +1516,14 @@
     if (o instanceof Hsl)
       return o;
     o = o.rgb();
-    var r = o.r / 255, g2 = o.g / 255, b = o.b / 255, min2 = Math.min(r, g2, b), max2 = Math.max(r, g2, b), h = NaN, s = max2 - min2, l = (max2 + min2) / 2;
+    var r = o.r / 255, g = o.g / 255, b = o.b / 255, min2 = Math.min(r, g, b), max2 = Math.max(r, g, b), h = NaN, s = max2 - min2, l = (max2 + min2) / 2;
     if (s) {
       if (r === max2)
-        h = (g2 - b) / s + (g2 < b) * 6;
-      else if (g2 === max2)
+        h = (g - b) / s + (g < b) * 6;
+      else if (g === max2)
         h = (b - r) / s + 2;
       else
-        h = (r - g2) / s + 4;
+        h = (r - g) / s + 4;
       s /= l < 0.5 ? max2 + min2 : 2 - max2 - min2;
       h *= 60;
     } else {
@@ -1630,10 +1630,10 @@
   var rgb_default = function rgbGamma(y) {
     var color2 = gamma(y);
     function rgb2(start2, end) {
-      var r = color2((start2 = rgb(start2)).r, (end = rgb(end)).r), g2 = color2(start2.g, end.g), b = color2(start2.b, end.b), opacity = nogamma(start2.opacity, end.opacity);
+      var r = color2((start2 = rgb(start2)).r, (end = rgb(end)).r), g = color2(start2.g, end.g), b = color2(start2.b, end.b), opacity = nogamma(start2.opacity, end.opacity);
       return function(t) {
         start2.r = r(t);
-        start2.g = g2(t);
+        start2.g = g(t);
         start2.b = b(t);
         start2.opacity = opacity(t);
         return start2 + "";
@@ -1644,20 +1644,20 @@
   }(1);
   function rgbSpline(spline) {
     return function(colors) {
-      var n = colors.length, r = new Array(n), g2 = new Array(n), b = new Array(n), i, color2;
+      var n = colors.length, r = new Array(n), g = new Array(n), b = new Array(n), i, color2;
       for (i = 0; i < n; ++i) {
         color2 = rgb(colors[i]);
         r[i] = color2.r || 0;
-        g2[i] = color2.g || 0;
+        g[i] = color2.g || 0;
         b[i] = color2.b || 0;
       }
       r = spline(r);
-      g2 = spline(g2);
+      g = spline(g);
       b = spline(b);
       color2.opacity = 1;
       return function(t) {
         color2.r = r(t);
-        color2.g = g2(t);
+        color2.g = g(t);
         color2.b = b(t);
         return color2 + "";
       };
@@ -1969,10 +1969,10 @@
   }
   Timer.prototype = timer.prototype = {
     constructor: Timer,
-    restart: function(callback, delay, time2) {
+    restart: function(callback, delay, time) {
       if (typeof callback !== "function")
         throw new TypeError("callback is not a function");
-      time2 = (time2 == null ? now() : +time2) + (delay == null ? 0 : +delay);
+      time = (time == null ? now() : +time) + (delay == null ? 0 : +delay);
       if (!this._next && taskTail !== this) {
         if (taskTail)
           taskTail._next = this;
@@ -1981,7 +1981,7 @@
         taskTail = this;
       }
       this._call = callback;
-      this._time = time2;
+      this._time = time;
       sleep();
     },
     stop: function() {
@@ -1992,9 +1992,9 @@
       }
     }
   };
-  function timer(callback, delay, time2) {
+  function timer(callback, delay, time) {
     var t = new Timer();
-    t.restart(callback, delay, time2);
+    t.restart(callback, delay, time);
     return t;
   }
   function timerFlush() {
@@ -2025,11 +2025,11 @@
       clockSkew -= delay, clockLast = now2;
   }
   function nap() {
-    var t0, t1 = taskHead, t2, time2 = Infinity;
+    var t0, t1 = taskHead, t2, time = Infinity;
     while (t1) {
       if (t1._call) {
-        if (time2 > t1._time)
-          time2 = t1._time;
+        if (time > t1._time)
+          time = t1._time;
         t0 = t1, t1 = t1._next;
       } else {
         t2 = t1._next, t1._next = null;
@@ -2037,17 +2037,17 @@
       }
     }
     taskTail = t0;
-    sleep(time2);
+    sleep(time);
   }
-  function sleep(time2) {
+  function sleep(time) {
     if (frame)
       return;
     if (timeout)
       timeout = clearTimeout(timeout);
-    var delay = time2 - clockNow;
+    var delay = time - clockNow;
     if (delay > 24) {
-      if (time2 < Infinity)
-        timeout = setTimeout(wake, time2 - clock.now() - clockSkew);
+      if (time < Infinity)
+        timeout = setTimeout(wake, time - clock.now() - clockSkew);
       if (interval)
         interval = clearInterval(interval);
     } else {
@@ -2058,13 +2058,13 @@
   }
 
   // node_modules/d3-timer/src/timeout.js
-  function timeout_default(callback, delay, time2) {
+  function timeout_default(callback, delay, time) {
     var t = new Timer();
     delay = delay == null ? 0 : +delay;
     t.restart((elapsed) => {
       t.stop();
       callback(elapsed + delay);
-    }, delay, time2);
+    }, delay, time);
     return t;
   }
 
@@ -2870,14 +2870,14 @@
   // node_modules/d3-format/src/formatGroup.js
   function formatGroup_default(grouping, thousands) {
     return function(value, width2) {
-      var i = value.length, t = [], j = 0, g2 = grouping[0], length = 0;
-      while (i > 0 && g2 > 0) {
-        if (length + g2 + 1 > width2)
-          g2 = Math.max(1, width2 - length);
-        t.push(value.substring(i -= g2, i + g2));
-        if ((length += g2 + 1) > width2)
+      var i = value.length, t = [], j = 0, g = grouping[0], length = 0;
+      while (i > 0 && g > 0) {
+        if (length + g + 1 > width2)
+          g = Math.max(1, width2 - length);
+        t.push(value.substring(i -= g, i + g));
+        if ((length += g + 1) > width2)
           break;
-        g2 = grouping[j = (j + 1) % grouping.length];
+        g = grouping[j = (j + 1) % grouping.length];
       }
       return t.reverse().join(thousands);
     };
@@ -3481,7 +3481,7 @@
       }).on("interrupt.zoom end.zoom", function() {
         gesture(this, arguments).event(event).end();
       }).tween("zoom", function() {
-        var that = this, args = arguments, g2 = gesture(that, args).event(event), e = extent.apply(that, args), p = point == null ? centroid(e) : typeof point === "function" ? point.apply(that, args) : point, w = Math.max(e[1][0] - e[0][0], e[1][1] - e[0][1]), a = that.__zoom, b = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i = interpolate(a.invert(p).concat(w / a.k), b.invert(p).concat(w / b.k));
+        var that = this, args = arguments, g = gesture(that, args).event(event), e = extent.apply(that, args), p = point == null ? centroid(e) : typeof point === "function" ? point.apply(that, args) : point, w = Math.max(e[1][0] - e[0][0], e[1][1] - e[0][1]), a = that.__zoom, b = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i = interpolate(a.invert(p).concat(w / a.k), b.invert(p).concat(w / b.k));
         return function(t) {
           if (t === 1)
             t = b;
@@ -3489,7 +3489,7 @@
             var l = i(t), k = w / l[2];
             t = new Transform(k, p[0] - l[0] * k, p[1] - l[1] * k);
           }
-          g2.zoom(null, t);
+          g.zoom(null, t);
         };
       });
     }
@@ -3554,49 +3554,49 @@
     function wheeled(event, ...args) {
       if (!filter2.apply(this, arguments))
         return;
-      var g2 = gesture(this, args).event(event), t = this.__zoom, k = Math.max(scaleExtent[0], Math.min(scaleExtent[1], t.k * Math.pow(2, wheelDelta.apply(this, arguments)))), p = pointer_default(event);
-      if (g2.wheel) {
-        if (g2.mouse[0][0] !== p[0] || g2.mouse[0][1] !== p[1]) {
-          g2.mouse[1] = t.invert(g2.mouse[0] = p);
+      var g = gesture(this, args).event(event), t = this.__zoom, k = Math.max(scaleExtent[0], Math.min(scaleExtent[1], t.k * Math.pow(2, wheelDelta.apply(this, arguments)))), p = pointer_default(event);
+      if (g.wheel) {
+        if (g.mouse[0][0] !== p[0] || g.mouse[0][1] !== p[1]) {
+          g.mouse[1] = t.invert(g.mouse[0] = p);
         }
-        clearTimeout(g2.wheel);
+        clearTimeout(g.wheel);
       } else if (t.k === k)
         return;
       else {
-        g2.mouse = [p, t.invert(p)];
+        g.mouse = [p, t.invert(p)];
         interrupt_default(this);
-        g2.start();
+        g.start();
       }
       noevent_default3(event);
-      g2.wheel = setTimeout(wheelidled, wheelDelay);
-      g2.zoom("mouse", constrain(translate(scale(t, k), g2.mouse[0], g2.mouse[1]), g2.extent, translateExtent));
+      g.wheel = setTimeout(wheelidled, wheelDelay);
+      g.zoom("mouse", constrain(translate(scale(t, k), g.mouse[0], g.mouse[1]), g.extent, translateExtent));
       function wheelidled() {
-        g2.wheel = null;
-        g2.end();
+        g.wheel = null;
+        g.end();
       }
     }
     function mousedowned(event, ...args) {
       if (touchending || !filter2.apply(this, arguments))
         return;
-      var currentTarget = event.currentTarget, g2 = gesture(this, args, true).event(event), v = select_default2(event.view).on("mousemove.zoom", mousemoved, true).on("mouseup.zoom", mouseupped, true), p = pointer_default(event, currentTarget), x0 = event.clientX, y0 = event.clientY;
+      var currentTarget = event.currentTarget, g = gesture(this, args, true).event(event), v = select_default2(event.view).on("mousemove.zoom", mousemoved, true).on("mouseup.zoom", mouseupped, true), p = pointer_default(event, currentTarget), x0 = event.clientX, y0 = event.clientY;
       nodrag_default(event.view);
       nopropagation2(event);
-      g2.mouse = [p, this.__zoom.invert(p)];
+      g.mouse = [p, this.__zoom.invert(p)];
       interrupt_default(this);
-      g2.start();
+      g.start();
       function mousemoved(event2) {
         noevent_default3(event2);
-        if (!g2.moved) {
+        if (!g.moved) {
           var dx = event2.clientX - x0, dy = event2.clientY - y0;
-          g2.moved = dx * dx + dy * dy > clickDistance2;
+          g.moved = dx * dx + dy * dy > clickDistance2;
         }
-        g2.event(event2).zoom("mouse", constrain(translate(g2.that.__zoom, g2.mouse[0] = pointer_default(event2, currentTarget), g2.mouse[1]), g2.extent, translateExtent));
+        g.event(event2).zoom("mouse", constrain(translate(g.that.__zoom, g.mouse[0] = pointer_default(event2, currentTarget), g.mouse[1]), g.extent, translateExtent));
       }
       function mouseupped(event2) {
         v.on("mousemove.zoom mouseup.zoom", null);
-        yesdrag(event2.view, g2.moved);
+        yesdrag(event2.view, g.moved);
         noevent_default3(event2);
-        g2.event(event2).end();
+        g.event(event2).end();
       }
     }
     function dblclicked(event, ...args) {
@@ -3612,55 +3612,55 @@
     function touchstarted(event, ...args) {
       if (!filter2.apply(this, arguments))
         return;
-      var touches = event.touches, n = touches.length, g2 = gesture(this, args, event.changedTouches.length === n).event(event), started, i, t, p;
+      var touches = event.touches, n = touches.length, g = gesture(this, args, event.changedTouches.length === n).event(event), started, i, t, p;
       nopropagation2(event);
       for (i = 0; i < n; ++i) {
         t = touches[i], p = pointer_default(t, this);
         p = [p, this.__zoom.invert(p), t.identifier];
-        if (!g2.touch0)
-          g2.touch0 = p, started = true, g2.taps = 1 + !!touchstarting;
-        else if (!g2.touch1 && g2.touch0[2] !== p[2])
-          g2.touch1 = p, g2.taps = 0;
+        if (!g.touch0)
+          g.touch0 = p, started = true, g.taps = 1 + !!touchstarting;
+        else if (!g.touch1 && g.touch0[2] !== p[2])
+          g.touch1 = p, g.taps = 0;
       }
       if (touchstarting)
         touchstarting = clearTimeout(touchstarting);
       if (started) {
-        if (g2.taps < 2)
+        if (g.taps < 2)
           touchfirst = p[0], touchstarting = setTimeout(function() {
             touchstarting = null;
           }, touchDelay);
         interrupt_default(this);
-        g2.start();
+        g.start();
       }
     }
     function touchmoved(event, ...args) {
       if (!this.__zooming)
         return;
-      var g2 = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t, p, l;
+      var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t, p, l;
       noevent_default3(event);
       for (i = 0; i < n; ++i) {
         t = touches[i], p = pointer_default(t, this);
-        if (g2.touch0 && g2.touch0[2] === t.identifier)
-          g2.touch0[0] = p;
-        else if (g2.touch1 && g2.touch1[2] === t.identifier)
-          g2.touch1[0] = p;
+        if (g.touch0 && g.touch0[2] === t.identifier)
+          g.touch0[0] = p;
+        else if (g.touch1 && g.touch1[2] === t.identifier)
+          g.touch1[0] = p;
       }
-      t = g2.that.__zoom;
-      if (g2.touch1) {
-        var p0 = g2.touch0[0], l0 = g2.touch0[1], p1 = g2.touch1[0], l1 = g2.touch1[1], dp = (dp = p1[0] - p0[0]) * dp + (dp = p1[1] - p0[1]) * dp, dl = (dl = l1[0] - l0[0]) * dl + (dl = l1[1] - l0[1]) * dl;
+      t = g.that.__zoom;
+      if (g.touch1) {
+        var p0 = g.touch0[0], l0 = g.touch0[1], p1 = g.touch1[0], l1 = g.touch1[1], dp = (dp = p1[0] - p0[0]) * dp + (dp = p1[1] - p0[1]) * dp, dl = (dl = l1[0] - l0[0]) * dl + (dl = l1[1] - l0[1]) * dl;
         t = scale(t, Math.sqrt(dp / dl));
         p = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
         l = [(l0[0] + l1[0]) / 2, (l0[1] + l1[1]) / 2];
-      } else if (g2.touch0)
-        p = g2.touch0[0], l = g2.touch0[1];
+      } else if (g.touch0)
+        p = g.touch0[0], l = g.touch0[1];
       else
         return;
-      g2.zoom("touch", constrain(translate(t, p, l), g2.extent, translateExtent));
+      g.zoom("touch", constrain(translate(t, p, l), g.extent, translateExtent));
     }
     function touchended(event, ...args) {
       if (!this.__zooming)
         return;
-      var g2 = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t;
+      var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t;
       nopropagation2(event);
       if (touchending)
         clearTimeout(touchending);
@@ -3669,18 +3669,18 @@
       }, touchDelay);
       for (i = 0; i < n; ++i) {
         t = touches[i];
-        if (g2.touch0 && g2.touch0[2] === t.identifier)
-          delete g2.touch0;
-        else if (g2.touch1 && g2.touch1[2] === t.identifier)
-          delete g2.touch1;
+        if (g.touch0 && g.touch0[2] === t.identifier)
+          delete g.touch0;
+        else if (g.touch1 && g.touch1[2] === t.identifier)
+          delete g.touch1;
       }
-      if (g2.touch1 && !g2.touch0)
-        g2.touch0 = g2.touch1, delete g2.touch1;
-      if (g2.touch0)
-        g2.touch0[1] = this.__zoom.invert(g2.touch0[0]);
+      if (g.touch1 && !g.touch0)
+        g.touch0 = g.touch1, delete g.touch1;
+      if (g.touch0)
+        g.touch0[1] = this.__zoom.invert(g.touch0[0]);
       else {
-        g2.end();
-        if (g2.taps === 2) {
+        g.end();
+        if (g.taps === 2) {
           t = pointer_default(t, this);
           if (Math.hypot(touchfirst[0] - t[0], touchfirst[1] - t[1]) < tapDistance) {
             var p = select_default2(this).on("dblclick.zoom");
@@ -3731,19 +3731,51 @@
   }
 
   // index.js
-  var padding = 10;
+  var dataset = [
+    { start: 20, end: 50, id: 1 },
+    { start: 70, end: 90, id: 2 }
+  ];
+  var padding = 0;
   var margin = { top: 20, right: 0, bottom: 30, left: 0 };
   var height = 500;
   var width = 820;
-  var time = linear2().domain([0, 100]).range([padding, width - padding]);
-  var zoom = zoom_default2().scaleExtent([1, 32]).extent([[margin.left, 0], [width - margin.right, height]]).translateExtent([[margin.left, -Infinity], [width - margin.right, Infinity]]).on("zoom", zoomed);
+  var xtime = linear2().domain([0, 100]).range([padding, width - padding]);
+  var zoom = zoom_default2().scaleExtent([1, 2]).extent([
+    [margin.left, 0],
+    [width - margin.right, height]
+  ]).translateExtent([
+    [margin.left, -Infinity],
+    [width - margin.right, Infinity]
+  ]).on("zoom", zoomed);
+  var svg = select_default2("#mychart").append("svg").attr("viewBox", [0, 0, width, height]).attr("width", width).attr("height", height);
+  svg.append("g").attr("class", "rect").attr("fill", "steelblue").selectAll("g").data(dataset).join("rect").attr("x", function(value, index) {
+    return xtime(value.start);
+  }).attr("y", function(value, index) {
+    return 0;
+  }).attr("width", function(value, index) {
+    return xtime(value.end) - xtime(value.start);
+  }).attr("height", function(value, index) {
+    return 20;
+  }).attr("fill", "pink").attr("data-id", "chi test").on("click", function(d, i) {
+    console.log(d);
+    console.log(i);
+  });
+  var xAxis = (g, x) => g.attr("transform", `translate(0,${height - margin.bottom})`).call(
+    axisBottom(x).ticks(width / 100).tickSizeOuter(0)
+  );
+  var gx = svg.append("g").call(xAxis, xtime);
+  svg.call(zoom);
   function zoomed(event) {
-    let xz = event.transform.rescaleX(time);
-    console.log(xz);
+    let xz = event.transform.rescaleX(xtime);
+    console.log("xz", xz);
+    svg.selectAll(".rect rect").attr("x", function(d) {
+      xtime(d.start);
+      return xz(d.start);
+    }).attr("width", function(d) {
+      console.log("gia tri width", xz(d.end), xz(d.start));
+      return xz(d.end) - xz(d.start);
+    });
+    gx.call(xAxis, xz);
   }
-  var axisX1 = axisBottom(time).ticks(10, ",f");
-  var xAxis = (g2, x) => g2.attr("transform", `translate(0,${height - margin.bottom})`).call(axisBottom(x).ticks(width / 50).tickSizeOuter(0));
-  var svg = select_default2("#mychart").append("svg").attr("viewBox", [0, 0, width, height]).attr("width", width - margin.left - margin.right).attr("height", height - margin.top - margin.bottom).attr("background", "red").call(zoom);
-  var g = svg.append("g").attr("transform", "translate(0,0) scale(1)").call(xAxis, time);
   console.log(svg);
 })();
