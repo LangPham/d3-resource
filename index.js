@@ -20,7 +20,7 @@ var xtime = d3
 
 var zoom = d3
   .zoom()
-  .scaleExtent([1, 2])
+  .scaleExtent([1, 8])
   .extent([
     [margin.left, 0],
     [width - margin.right, height],

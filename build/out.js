@@ -3740,7 +3740,7 @@
   var height = 500;
   var width = 820;
   var xtime = linear2().domain([0, 100]).range([padding, width - padding]);
-  var zoom = zoom_default2().scaleExtent([1, 2]).extent([
+  var zoom = zoom_default2().scaleExtent([1, 8]).extent([
     [margin.left, 0],
     [width - margin.right, height]
   ]).translateExtent([
