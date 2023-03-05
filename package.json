@@ -1,0 +1,16 @@
+{
+  "name": "d3-resource",
+  "version": "1.0.0",
+  "description": "D3 resource manager",
+  "main": "index.js",
+  "author": "LangPham",
+  "license": "MIT",
+  "scripts": {
+    "dev": "./node_modules/.bin/esbuild index.js --bundle --outfile=build/out.js --watch"
+    
+  },
+  "devDependencies": {
+    "d3": "^7.8.2",
+    "esbuild": "^0.17.11"
+  }
+}
