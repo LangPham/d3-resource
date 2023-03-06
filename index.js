@@ -4,23 +4,28 @@ import * as d3 from "d3";
 // .ticks(2)
 // .render()
 // Sample dataset. In a real application, you will probably get this data from another source such as AJAX.
+console.log(Date.now());
 var dataset = [
-  { start: 20, end: 50, id: 1 },
-  { start: 70, end: 90, id: 2 },
+  { start: Date.now(), end: Date.now() + 60 * 60 * 1000, id: 1 },
+  // { start: 70, end: 90, id: 2 },
 ];
 
-var padding = 0;
+var padding = 10;
 var margin = { top: 20, right: 0, bottom: 30, left: 0 };
 var height = 500;
-var width = 820;
+var width = 1000;
 var xtime = d3
-  .scaleLinear()
-  .domain([0, 100])
+  .scaleTime()
+  .domain([
+    Date.now() - 24 * 60 * 60 * 1000 * 5,
+    Date.now() + 24 * 60 * 60 * 1000 * 45,
+  ])
+  .nice(2)
   .range([padding, width - padding]);
 
 var zoom = d3
   .zoom()
-  .scaleExtent([1, 8])
+  // .scaleExtent([1, 50])
   .extent([
     [margin.left, 0],
     [width - margin.right, height],
@@ -43,8 +48,9 @@ svg
   .attr("class", "rect")
   .attr("fill", "steelblue")
   .selectAll("g") // I'm selecting all of the rectangles in the SVG (note that at this point, there actually aren't any, but we'll be creating them in a couple of steps).
-  .data(dataset) // Then I'm mapping the dataset to those rectangles.
-  .join("rect") // For each element in the dataset, append a new rectangle.
+  .data(dataset)
+  .enter()
+  .append("rect") // Then I'm mapping the dataset to those rectangles.
   .attr("x", function (value, index) {
     return xtime(value.start);
   })
@@ -65,34 +71,36 @@ svg
     console.log(d);
     console.log(i);
   });
+
 var xAxis = (g, x) =>
-  g.attr("transform", `translate(0,${height - margin.bottom})`).call(
-    d3
-      .axisBottom(x)
-      .ticks(width / 100)
-      .tickSizeOuter(0)
-  );
+  g
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x));
 
 var gx = svg.append("g").call(xAxis, xtime);
 
-svg.call(zoom);
+svg
+  .call(zoom)
+  .transition()
+  .duration(150)
+  .call(zoom.scaleTo, 50, [xtime(Date.now()), 0]);
 
 function zoomed(event) {
   let xz = event.transform.rescaleX(xtime);
-  console.log("xz", xz);
+  console.log("xz", event.transform);
   // path.attr("d", area(data, xz));
   svg
     .selectAll(".rect rect")
     .attr("x", function (d) {
-    //   console.log("d", d);
+      //   console.log("d", d);
       xtime(d.start);
-    //   console.log("d", xtime(d.start));
-      return xz(d.start)
+      //   console.log("d", xtime(d.start));
+      return xz(d.start);
     })
-    .attr("width", function(d) {
-        console.log("gia tri width", xz(d.end) , xz(d.start));
-        // xz()
-        return xz(d.end) - xz(d.start)
+    .attr("width", function (d) {
+      console.log("gia tri width", xz(d.end), xz(d.start));
+      // xz()
+      return xz(d.end) - xz(d.start);
     });
   //   console.log(svg.selectAll(".rect rect"))
   gx.call(xAxis, xz);
