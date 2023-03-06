@@ -10,7 +10,7 @@ var dataset = [
     end: new Date(2023, 2, 6, 19, 45, 0),
     id: 1,
     content: "Dragon",
-    group: "one"
+    group: "one",
   },
   //
   {
@@ -18,8 +18,9 @@ var dataset = [
     end: new Date(2023, 2, 6, 21, 0, 0),
     id: 2,
     content: "Lion",
-    group: "two"
-  }, { start: 70, end: 90, id: 2 },
+    group: "two",
+  },
+  { start: 70, end: 90, id: 2 },
 ];
 
 // var padding = 10;
@@ -46,7 +47,7 @@ var svg = d3
   .append("svg") // Appending an SVG element to that container.
   .attr("viewBox", [0, 0, width, height])
   .attr("width", width) // Setting the width of the SVG.
-  .attr("height", height)
+  .attr("height", height);
 
 var xAxis = (g, x) =>
   g
@@ -55,7 +56,10 @@ var xAxis = (g, x) =>
 
 var gx = svg.append("g").call(xAxis, xTime);
 // const tooltip = svg.append("g").style("pointer-events", "none");
-svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(yGroup));
+svg
+  .append("g")
+  .attr("transform", `translate(${margin.left},0)`)
+  .call(d3.axisLeft(yGroup));
 
 var zoom = d3
   .zoom()
@@ -69,6 +73,11 @@ var zoom = d3
   ])
   .on("zoom", zoomed);
 
+  var drag = d3
+  .drag()
+  .on("start", dragstarted)
+  .on("drag", dragged)
+  .on("end", dragended);
 svg
   .append("g")
   .attr("class", "rect")
@@ -81,9 +90,6 @@ svg
     return xTime(value.start);
   })
   .attr("y", function (value, index) {
-    console.log("value", value.group)
-    console.log(yGroup.bandwidth("two"))
-    console.log("aAAAAAAA", yGroup(value.group))
     return yGroup(value.group);
   })
   .attr("width", function (value, index) {
@@ -92,9 +98,9 @@ svg
   .attr("height", yGroup.bandwidth())
   .attr("fill", "pink") // Sets the color of the bars.
   .attr("data-id", "chi test")
+  .call(drag)
   .on("click", function (d, i) {
-    console.log("event", d);
-    console.log("data", i);
+    if (d.defaultPrevented) return;    
     title = "Edit book";
     text = "Edit book with what";
 
@@ -134,8 +140,8 @@ svg
               .add(parseInt(result.value), "minutes")
               .toDate();
             console.log("after", i);
-            // console.log(d.target);
-            var transform = d3.zoomTransform(d.target);
+            console.log("tim lai",d.target);
+            let transform = d3.zoomTransform(d.target);
             console.log("transform", transform.rescaleX(xTime));
             let xz = transform.rescaleX(xTime);
             console.log("start", xz(i.start));
@@ -153,56 +159,57 @@ svg
     });
   })
   // Tooltip
-  .on("pointerenter", (event, d) => {
-    console.log(event, d);
-    tooltip = svg.append("g").attr("id", `tooltip-${d.id}`);
-    title = "ddddd";
-    tooltip.style("display", null);
-    tooltip.attr("transform", `translate(${event.clientX},${event.clientY})`);
+  // .on("pointerenter", (event, d) => {
+  //   console.log(event, d);
+  //   tooltip = svg.append("g").attr("id", `tooltip-${d.id}`);
+  //   title = "ddddd";
+  //   tooltip.style("display", null);
+  //   tooltip.attr("transform", `translate(${event.clientX},${event.clientY})`);
 
-    const path = tooltip
-      .selectAll("path")
-      .data([,])
-      .join("path")
-      .attr("fill", "#f0f0f0")
-      .attr("stroke", "black");
+  //   const path = tooltip
+  //     .selectAll("path")
+  //     .data([,])
+  //     .join("path")
+  //     .attr("fill", "#f0f0f0")
+  //     .attr("stroke", "black");
 
-    const text = tooltip
-      .selectAll("text")
-      .data([,])
-      .join("text")
-      .call((text) =>
-        text
-          .selectAll("tspan")
-          .data(
-            `${d.content}: ${moment(d.start).format(
-              "DD/MM/YYYY HH:mm"
-            )} -> ${moment(d.end).format("HH:mm")} `
-          )
-          .join("tspan")
-          .attr("font-weight", (_, i) => (i ? null : "bold"))
-          .text((d) => d)
-      );
+  //   const text = tooltip
+  //     .selectAll("text")
+  //     .data([,])
+  //     .join("text")
+  //     .call((text) =>
+  //       text
+  //         .selectAll("tspan")
+  //         .data(
+  //           `${d.content}: ${moment(d.start).format(
+  //             "DD/MM/YYYY HH:mm"
+  //           )} -> ${moment(d.end).format("HH:mm")} `
+  //         )
+  //         .join("tspan")
+  //         .attr("font-weight", (_, i) => (i ? null : "bold"))
+  //         .text((d) => d)
+  //     );
 
-    const { x, y, width: w, height: h } = text.node().getBBox();
-    text.attr("transform", `translate(${-w / 2},${15 - y})`);
-    path.attr(
-      "d",
-      `M${-w / 2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`
-    );
-    // svg.property("value", O[i]).dispatch("input", { bubbles: true });
-  })
-  .on("pointerleave", (event, d) => {
-    tooltip.remove();
-    svg.node().value = null;
-    svg.dispatch("input", { bubbles: true });
-  });
+  //   const { x, y, width: w, height: h } = text.node().getBBox();
+  //   text.attr("transform", `translate(${-w / 2},${15 - y})`);
+  //   path.attr(
+  //     "d",
+  //     `M${-w / 2 - 10},5H-5l5,-5l5,5H${w / 2 + 10}v${h + 20}h-${w + 20}z`
+  //   );
+  //   // svg.property("value", O[i]).dispatch("input", { bubbles: true });
+  // })
+  // .on("pointerleave", (event, d) => {
+  //   tooltip.remove();
+  //   svg.node().value = null;
+  //   svg.dispatch("input", { bubbles: true });
+  // })
+  
 
 svg
   .call(zoom)
   .transition()
   .duration(150)
-  .call(zoom.scaleTo, 50, [xTime(Date.now()), 0]);
+  .call(zoom.scaleTo, 50, [xTime(Date.now()), 0])
 
 function zoomed(event) {
   let xz = event.transform.rescaleX(xTime);
@@ -219,4 +226,33 @@ function zoomed(event) {
     });
 
   gx.call(xAxis, xz);
+}
+var drapStart = 0
+
+function dragstarted(event, d) {
+  console.log("drag",event)
+  drapStart = event.sourceEvent
+  d3.select(this).raise().attr("stroke", "black");
+}
+
+function dragged(event, d) {
+  console.log("dragged event",event)
+  console.log("dragged d",d)
+  var transform = d3.zoomTransform(event.sourceEvent.srcElement)
+  console.log("transform",transform)
+  let xz = transform.rescaleX(xTime);  
+  let grid = xz(moment(d.start).add(15, "minutes").toDate()) - xz(d.start)
+  console.log("grid", grid);
+  d3.select(this)
+    .attr("x", function(d) {   
+      console.log()    
+      step = (event.x/grid) - (xz(d.start)/grid)      
+      return xz(d.start) + Math.round(step) * grid
+    })
+    // .attr("x", (d.x = event.x))
+    // .attr("cy", (d.y = event.y));
+}
+
+function dragended(event, d) {
+  d3.select(this).attr("stroke", null);
 }
