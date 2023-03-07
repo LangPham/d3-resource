@@ -6,21 +6,20 @@ import moment from "moment";
 var dataset = [
   // { start: new Date, end: Date.now() + 60 * 60 * 1000, id: 1 },
   {
-    start: new Date(2023, 2, 6, 19, 0, 0),
-    end: new Date(2023, 2, 6, 19, 45, 0),
+    start: new Date(2023, 2, 7, 19, 0, 0),
+    end: new Date(2023, 2, 7, 20, 0, 0),
     id: 1,
     content: "Dragon",
     group: "one",
   },
   //
   {
-    start: new Date(2023, 2, 6, 20, 0, 0),
-    end: new Date(2023, 2, 6, 21, 0, 0),
+    start: new Date(2023, 2, 7, 20, 0, 0),
+    end: new Date(2023, 2, 7, 21, 0, 0),
     id: 2,
     content: "Lion",
     group: "two",
-  },
-  { start: 70, end: 90, id: 2 },
+  },  
 ];
 
 // var padding = 10;
@@ -99,11 +98,12 @@ svg
   .attr("fill", "pink") // Sets the color of the bars.
   .attr("data-id", "chi test")
   .call(drag)
-  .on("click", function (d, i) {
-    if (d.defaultPrevented) return;    
+  .on("dblclick", function (event, data) {
+    console.log("click", event)
+    if (event.defaultPrevented) return;    
     title = "Edit book";
     text = "Edit book with what";
-
+    console.log("click",data)
     Swal.fire({
       title: "Action",
       input: "radio",
@@ -120,7 +120,8 @@ svg
     }).then((result) => {
       if (result.isConfirmed) {
         if (result.value == "edit") {
-          inputValue = moment(i.end).diff(moment(i.start), "minutes"); // 1 moment(i.end) - moment(i.start)
+          console.log("data", data);
+          inputValue = moment(data.end).diff(moment(data.start), "minutes"); // 1 moment(i.end) - moment(i.start)
           console.log("inputValue", inputValue);
           Swal.fire({
             title: "Time long you book?",
@@ -134,34 +135,29 @@ svg
             },
             inputValue: inputValue,
           }).then((result) => {
-            console.log("result", result);
-            console.log("before", moment(i.start));
-            i.end = moment(i.start)
-              .add(parseInt(result.value), "minutes")
-              .toDate();
-            console.log("after", i);
-            console.log("tim lai",d.target);
-            let transform = d3.zoomTransform(d.target);
-            console.log("transform", transform.rescaleX(xTime));
-            let xz = transform.rescaleX(xTime);
-            console.log("start", xz(i.start));
-            console.log("end", xz(i.end));
-            console.log("width", xz(i.end) - xz(i.start));
-            d3.select(d.target).attr("width", xz(i.end) - xz(i.start));
-
-            // d.target.attr("width", 500)
+            if (result.isConfirmed) {
+              data.end = moment(data.start)
+                .add(parseInt(result.value), "minutes")
+                .toDate();              
+              let transform = d3.zoomTransform(event.target);              
+              let xz = transform.rescaleX(xTime);              
+              d3.select(event.target).attr("width", xz(data.end) - xz(data.start));
+            }
+            
           });
         } else if (result.value == "remove") {
-          i = null;
-          d3.select(d.target).remove();
+          data = null;
+          d3.select(event.target).remove();
+          console.log(dataset)
         }
       }
     });
   })
-  // Tooltip
-  // .on("pointerenter", (event, d) => {
+  //// Tooltip
+  // .on("click", (event, d) => {
   //   console.log(event, d);
-  //   tooltip = svg.append("g").attr("id", `tooltip-${d.id}`);
+    
+  //   tooltip = svg.append("g").attr("class", `tooltip`);
   //   title = "ddddd";
   //   tooltip.style("display", null);
   //   tooltip.attr("transform", `translate(${event.clientX},${event.clientY})`);
@@ -212,6 +208,11 @@ svg
   .call(zoom.scaleTo, 50, [xTime(Date.now()), 0])
 
 function zoomed(event) {
+  console.log("zoomde",event)
+  if (event.sourceEvent && event.sourceEvent.type == "dblclick" && event.sourceEvent.target.nodeName == "rect") {
+
+    return ;
+  }
   let xz = event.transform.rescaleX(xTime);
   // console.log("xz", event.transform);
   // path.attr("d", area(data, xz));
@@ -227,32 +228,44 @@ function zoomed(event) {
 
   gx.call(xAxis, xz);
 }
-var drapStart = 0
+var dragStartEvent = null
+var dragEndEvent = null
 
 function dragstarted(event, d) {
   console.log("drag",event)
-  drapStart = event.sourceEvent
+  dragStartEvent = event
   d3.select(this).raise().attr("stroke", "black");
 }
 
 function dragged(event, d) {
   console.log("dragged event",event)
-  console.log("dragged d",d)
+  // console.log("dragged d",d)
   var transform = d3.zoomTransform(event.sourceEvent.srcElement)
-  console.log("transform",transform)
+  // console.log("transform",transform)
   let xz = transform.rescaleX(xTime);  
   let grid = xz(moment(d.start).add(15, "minutes").toDate()) - xz(d.start)
-  console.log("grid", grid);
+  
   d3.select(this)
     .attr("x", function(d) {   
-      console.log()    
-      step = (event.x/grid) - (xz(d.start)/grid)      
-      return xz(d.start) + Math.round(step) * grid
+      
+      step = Math.round((event.x/grid) - (dragStartEvent.x/grid))
+      new_x = moment(d.start).add(15 * step, "minutes").toDate()
+  
+      dragEndEvent = new_x
+      return xz(new_x)
     })
-    // .attr("x", (d.x = event.x))
-    // .attr("cy", (d.y = event.y));
+  
 }
 
 function dragended(event, d) {
-  d3.select(this).attr("stroke", null);
+  
+  if (dragEndEvent !== null) {
+    d3.select(this).attr("stroke", null);
+    dur = moment(d.end).diff(moment(d.start), 'minutes');
+    
+    d.start = dragEndEvent
+    d.end = moment(d.start).add(dur, 'minutes').toDate()
+    console.log("dur", d)
+  }
+  
 }
